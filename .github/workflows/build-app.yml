@@ -1,0 +1,44 @@
+name: .NET
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+env:
+  DOCKER_HUB_USERNAME: olopatskyi
+  DOCKER_HUB_PASSWORD: ${{ secrets.DOCKER_HUB_PASSWORD }}
+
+jobs:
+  build-app:
+    runs-on: windows-latest
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: 6.0.x
+
+    - name: build app
+      run: dotnet build agrconclude.API/agrconclude.API.csproj
+  
+  build-image-and-push:
+    runs-on: ubuntu-latest
+    needs: build-app
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v2
+      
+    - name: Login to Docker Hub
+      uses: docker/login-action@v1
+      with:
+        username: ${{ env.DOCKER_HUB_USERNAME }}
+        password: ${{ env.DOCKER_HUB_PASSWORD }}
+        
+    - name: Build Docker Image
+      run: docker build -t olopatskyi/agrconcludeapi .
+      
+    - name: Push Docker Image
+      run: docker push olopatskyi/agrconcludeapi
